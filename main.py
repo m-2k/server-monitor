@@ -1,27 +1,28 @@
 #!/usr/bin/env python
+'''
 from flask import Flask, url_for
 from flask.ext.socketio import SocketIO, send, emit
 from string import split
 import subprocess
 import re
-import json
-import threading
-import time
 import gevent
 from pprint import pprint
 import logging
+import pylab
+import numpy as np
+import matplotlib.pyplot as plt
 
 SERVER_CONFIG = {
-    'borges': {
-        'username': 'sun-sm',
-        'hostname': 'borges',
-        'descrption': 'Borges'
-    },
+#    'borges': {
+#        'username': 'sun-sm',
+#        'hostname': 'borges',
+#        'descrption': 'Borges'
+#    },
     'casa': {
         'username': 'marcelo',
         'port': 8000,
-        'hostname': 'mottalli.ddns.net',
-        'descrption': 'Casa'
+        'hostname': 'localhost',
+        'descrption': 'local'
     }
 }
 
@@ -115,12 +116,6 @@ def getMemory(host):
 
     return {'total': total, 'used': used, 'free': free, 'shared': shared, 'buffers': buffers, 'cached': cached }
 
-COMMAND_MAP = {
-    'memory': getMemory,
-    'disk': getDiskUsage,
-    'procpu': getProcesses,
-}
-
 app = Flask('python-monitor')
 app.config['SECRET_KEY'] = 'Ks36B9IJ9pYXfziaw9p3'
 app.debug = True
@@ -142,29 +137,33 @@ class CircularList(object):
         if len(self.elements) > self.capacity:
             self.elements = self.elements[-self.capacity:]
 
-# Stores the last n pieces of information
-LAST_OUTPUTS = {}
-def monitorThread(server):
-    assert(server in SERVER_CONFIG)
-    LAST_OUTPUTS[server] = {}
-    for command in COMMANDS:
-        LAST_OUTPUTS[server][command] = CircularList(10)
+def memoryThread(server):
+    filename = server + '-' + 'memory.png'
+    lastReadings = CircularList(10)
 
-    # Loop forever: execute each command in the list of commands
+    width, height = 500, 200
+    dpi = 72.0
+
     while True:
-        gevent.sleep(1)
-        for command in COMMANDS:
-            logging.info('Requesting %s.%s' % (server, command))
-            try:
-                result = COMMAND_MAP[command](server)
-                LAST_OUTPUTS[server][command].push(result)
-                socketio.emit('update_status', {
-                    'server': server,
-                    'statusType': command,
-                    'lastValues': LAST_OUTPUTS[server][command].elements
-                })
-            except CommandException as e:
-                logging.error('Got error')
+        status = getMemory(server)
+        lastReadings.push(status)
+
+        # Generate the graphs
+        used = np.array([r['used'] for r in lastReadings.elements])
+        free = np.array([r['free'] for r in lastReadings.elements])
+        cached = np.array([r['cached'] for r in lastReadings.elements])
+        x = np.arange(len(used))
+        y = np.row_stack((used, free, cached))
+        fig = plt.figure(figsize=(width/dpi, height/dpi), dpi=dpi)
+        plt.stackplot(x, y, label=['Used', 'Free', 'Cached'])
+
+        pylab.savefig('static/'+filename, dpi=dpi)
+        plt.close(fig)
+
+        gevent.sleep(2)
+
+def spawnThreads(server):
+    gevent.spawn(memoryThread, server)
 
 @app.route('/')
 def home():
@@ -174,6 +173,38 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     # Spawn a monitor thread for each server
     for server in SERVER_CONFIG:
-        gevent.spawn(monitorThread, server)
+        spawnThreads(server)
 
     socketio.run(app)
+'''
+
+from flask import Flask
+from flask.ext.socketio import SocketIO
+from monitor import memory
+import logging
+import monitor
+import gevent
+
+app = Flask('python-monitor')
+app.config['SECRET_KEY'] = 'Ks36B9IJ9pYXfziaw9p3'
+app.debug = True
+socketio = SocketIO(app)
+
+@socketio.on('client_connected')
+def client_connected(message):
+    logging.info('Client connected')
+
+@app.route('/')
+def home():
+    return app.send_static_file('index.html')
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+
+    local = monitor.Server('local', 'localhost', 'Servidor local')
+    memoryMonitor = memory.MemoryMonitor(socketio, local)
+    gevent.spawn(memory.MemoryMonitor.monitorLoop, memoryMonitor)
+
+    socketio.run(app)
+
+
