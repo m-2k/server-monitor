@@ -1,9 +1,10 @@
-name: 'monitor_ui'
+name: 'monitor_webapp'
 version: 0.0.1
 description: >
-  Server monitoring application
-author: Marcelo Mottalli <marcelo@grandata.com>
-homepage: https://www.grandata.com
+  A minimal web app for the developer that doesn’t want to be confused by too
+  much going on.
+#author: <your name> <email@example.com>
+#homepage: https://www.example.com
 environment:
   sdk: '>=1.0.0 <2.0.0'
 dependencies:
@@ -14,5 +15,3 @@ dependencies:
 transformers:
 - script_inliner
 - sass
-#- sass:
-#    style: compressed

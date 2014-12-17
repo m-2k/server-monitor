@@ -1,5 +1,6 @@
 import string
-from . import BaseMonitor
+from monitor import BaseMonitor
+from server import broadcast
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
@@ -7,8 +8,8 @@ import os
 import pylab
 
 class MemoryMonitor(BaseMonitor):
-    def __init__(self, socketio, server, interval=1):
-        super(self.__class__, self).__init__(socketio, server, 'memory', interval)
+    def __init__(self, server, interval=2):
+        super(self.__class__, self).__init__(server, 'memory', interval)
 
     def generateValues(self):
         command = 'free -om | tail -n +2 | head -n 1 | awk \'{ print $2, $3, $4, $5, $6, $7 }\''
@@ -61,5 +62,5 @@ class MemoryMonitor(BaseMonitor):
             'server': self.server.name,
             'image': filename
         }
-        self.socketio.emit('monitor-memory-image', message)
+        broadcast('monitor-memory-image', message)
 

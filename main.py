@@ -178,7 +178,7 @@ if __name__ == "__main__":
     socketio.run(app)
 '''
 
-from flask import Flask
+'''from flask import Flask
 from flask.ext.socketio import SocketIO
 from monitor import memory
 import logging
@@ -206,5 +206,31 @@ if __name__ == "__main__":
     gevent.spawn(memory.MemoryMonitor.monitorLoop, memoryMonitor)
 
     socketio.run(app)
+'''
 
+import gevent
+from monitor.server import broadcast, startMonitorServer
+from monitor import Server, memory, disk
+import logging
 
+SERVERS = [
+    Server('marcelo', 'mottalli.ddns.net', 'Casa Marcelo', 8000, 'marcelo'),
+    Server('borges', 'borges', 'Borges', 22, 'sun-sm')
+]
+
+def startMonitoringThreads(server):
+    logging.info("Starting monitor threads for server {}...".format(server.name))
+
+    memoryMonitor = memory.MemoryMonitor(server)
+    gevent.spawn(memory.MemoryMonitor.monitorLoop, memoryMonitor)
+
+    diskMonitor = disk.DiskMonitor(server)
+    gevent.spawn(disk.DiskMonitor.monitorLoop, diskMonitor)
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+
+    for server in SERVERS:
+        startMonitoringThreads(server)
+
+    startMonitorServer()

@@ -1,6 +1,7 @@
 import subprocess
 import string
 import gevent
+from server import broadcast
 
 def _shellquote(s):
     ''' Quotes a string so it can be passed as a shell parameter '''
@@ -22,7 +23,7 @@ class Server(object):
         localCommand = 'ssh -oBatchMode=yes '
         localCommand += '-p %i ' % self.port
         if self.username:
-            localcommand += self.username + '@'
+            localCommand += self.username + '@'
         localCommand += self.host + ' '
         localCommand += _shellquote(remoteCommand)
 
@@ -46,12 +47,11 @@ class CircularList(object):
             self.values = self.values[-self.capacity:]
 
 class BaseMonitor(object):
-    def __init__(self, socketio, server, monitorName, interval=2, numReads=10):
+    def __init__(self, server, monitorName, interval=2, numReads=10):
         self.server = server
         self.monitorName = monitorName
         self.lastValues = CircularList(numReads)
         self.interval = interval
-        self.socketio = socketio
 
     def monitorLoop(self):
         while True:
@@ -66,7 +66,7 @@ class BaseMonitor(object):
                 'lastValues': self.lastValues.values,
                 'values': values
             }
-            self.socketio.emit(messageName, message)
+            broadcast(messageName, message)
 
             self.postProcess()
 

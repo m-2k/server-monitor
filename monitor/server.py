@@ -1,29 +1,49 @@
-from gevent import monkey; monkey.patch_all()
-from ws4py.websocket import WebSocket
-from ws4py.manager import WebSocketManager
 import json
+from gevent import monkey; monkey.patch_all()
+from flask import Flask, render_template, app
+from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
+import logging
 
-_ALL_CLIENTS = WebSocketManager()
-_ENCODER = json.JSONEncoder()
+flask_app = Flask(__name__)
+flask_app.debug = True
 
-class _SelfRegisteringSocket(WebSocket):
-    ''' A server socket that registers and unregisters itself with the WebSocketManager '''
+ALL_CLIENTS = {}
 
-    def __init__(self, *args, **kwargs):
-        self.alreadyRegisterd = False
-        WebSocket.__init__(*args, **kwargs)
+def broadcast(message, contents):
+    envelope = {
+        'message': message,
+        'contents': contents
+    }
+    encodedEnvelope = json.dumps(envelope)
 
-    def opened(self):
-        # THIS IS A HACK! WebSocketManger() is implemented for clients
-        # (for some reason) but it works just as well for servers. If
-        # we don't add this check, it will enter in an infinite recursion.
-        if not self.alreadyRegistered:
-            self.alreadyRegistered = True
-            _ALL_CLIENTS.add(self)
+    for client in ALL_CLIENTS.values():
+        client.ws.send(encodedEnvelope)
 
-    def closed(self, code, reason):
-        _ALL_CLIENTS.remove(self)
+class MonitorSocket(WebSocketApplication):
+    def on_open(self):
+        client = self.ws.handler.active_client
+        logging.info("Client connected! Registering with address {}".format(client.address))
+        ALL_CLIENTS[client.address] = client
 
-def broadcast(message, values):
-    envelope = { 'message': message, 'values': values }
-    _ALL_CLIENTS.broadcast(_ENCODER.encode(envelope))
+    def on_message(self, message):
+        pass
+
+    def on_close(self, reason=None):
+        client = self.ws.handler.active_client
+        del ALL_CLIENTS[client.address]
+
+@flask_app.route('/')
+def index():
+    return render_template('index.html')
+
+def startMonitorServer():
+    WebSocketServer(
+        ('0.0.0.0', 8000),
+
+        Resource({
+            '^/monitor_socket': MonitorSocket,
+            '^/.*': flask_app
+        }),
+
+        debug=False
+    ).serve_forever()
