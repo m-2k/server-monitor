@@ -1,0 +1,18 @@
+name: 'monitor_ui'
+version: 0.0.1
+description: >
+  Server monitoring application
+author: Marcelo Mottalli <marcelo@grandata.com>
+homepage: https://www.grandata.com
+environment:
+  sdk: '>=1.0.0 <2.0.0'
+dependencies:
+  browser: any
+  sass: '>=0.4.0 <0.5.0'
+  script_inliner: '>=1.0.0 <2.0.0'
+  route_hierarchical: '>=0.5.0 <0.7.0'
+transformers:
+- script_inliner
+- sass
+#- sass:
+#    style: compressed
