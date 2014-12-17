@@ -36,7 +36,7 @@ class MemoryMonitor(BaseMonitor):
         ''' Generate the chart with the free memory '''
         filename = self.server.name + '-' + self.monitorName + '.png'
         currdir = os.path.dirname(os.path.realpath(__file__))
-        destdir = os.path.join(currdir, 'static')
+        destdir = os.path.join(currdir, '../static')
         destfile = os.path.join(destdir, filename)
 
         width, height, dpi = 500, 100, 72.0
