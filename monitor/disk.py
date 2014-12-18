@@ -9,7 +9,7 @@ class DiskMonitor(BaseMonitor):
     def generateValues(self):
         ''' We want only the "real" filesystems (the ones of type ext[2,3,4]). The same
         partition may be mounted more than once (e.g. chroots) so we do an unique too '''
-        command = 'df -Pm -t ext2 -t ext3 -t ext4 | tail -n +2 | awk \'{ print $1, $3, $4 }\' | sort -nu -k2'
+        command = 'df -Pm -t ext2 -t ext3 -t ext4 | tail -n +2 | awk \'{ print $1, $3, $4 }\' | sort -nu -k2 | sort -n'
         lines = self.server.executeCommand(command)
 
         disks = []

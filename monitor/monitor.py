@@ -1,5 +1,6 @@
 import subprocess
 import string
+import logging
 import gevent
 from server import broadcast
 
@@ -28,7 +29,6 @@ class Server(object):
         localCommand += _shellquote(remoteCommand)
 
         # Executes the command and splits the output by lines
-        #TODO: Error checking
         output = subprocess.check_output(localCommand, shell=True).strip()
         lines = string.split(output, '\n')
 
@@ -55,20 +55,24 @@ class BaseMonitor(object):
 
     def monitorLoop(self):
         while True:
-            gevent.sleep(self.interval)
+            try:
+                gevent.sleep(self.interval)
 
-            values = self.generateValues()
-            self.lastValues.push(values)
+                values = self.generateValues()
+                self.lastValues.push(values)
 
-            messageName = 'monitor-'+self.monitorName
-            message = {
-                'server': self.server.name,
-                'lastValues': self.lastValues.values,
-                'values': values
-            }
-            broadcast(messageName, message)
+                messageName = 'monitor-'+self.monitorName
+                message = {
+                    'server': self.server.name,
+                    'lastValues': self.lastValues.values,
+                    'values': values
+                }
+                broadcast(messageName, message)
 
-            self.postProcess()
+                self.postProcess()
+            except subprocess.CalledProcessError as e:
+                logging.error('Unable to execute command: {}'.format(e))
+
 
     def generateValues(self):
         raise NotImplementedError('Abstract class')

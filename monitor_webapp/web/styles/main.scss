@@ -2,16 +2,51 @@
  * Visual Style Guide styles
  * Remove if you prefer to use a CSS library, like Bootstrap
  */
-/*@import 'components/components';*/
 
 #server-list {
     display: table;
+
+    .server {
+        display: table-row;
+
+        #name {
+            font-weight: bold;
+        }
+
+        #name, #memory, #disks, #proccpu {
+            display: table-cell;
+        }
+
+        div {
+            border: 1px solid black;
+            padding: 5px;
+        }
+
+        #proccpu {
+            table {
+                tbody tr:nth-child(odd) {
+                    background: #eee;
+                }
+
+                thead tr td {
+                    font-weight: bold;
+                }
+
+                td {
+                    font-size: small;
+                }
+            }
+        }
+
+        .disk span {
+            padding-right: 10px;
+        }
+    }
 }
 
-.server {
-    display: table-row;
+.warning {
+    background: #ee0;
 }
 
-.server #memory {
-    display: table-cell;
+.critical {
 }

@@ -1,7 +1,7 @@
 import json
 from gevent import monkey; monkey.patch_all()
 from flask import Flask, render_template, app
-from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
+from geventwebsocket import WebSocketServer, WebSocketApplication, Resource, WebSocketError
 import logging
 
 flask_app = Flask(__name__)
@@ -17,7 +17,10 @@ def broadcast(message, contents):
     encodedEnvelope = json.dumps(envelope)
 
     for client in ALL_CLIENTS.values():
-        client.ws.send(encodedEnvelope)
+        try:
+            client.ws.send(encodedEnvelope)
+        except WebSocketError:
+            pass
 
 class MonitorSocket(WebSocketApplication):
     def on_open(self):
@@ -34,11 +37,12 @@ class MonitorSocket(WebSocketApplication):
 
 @flask_app.route('/')
 def index():
-    return render_template('index.html')
+    return flask_app.send_static_file('index.html')
 
-def startMonitorServer():
+def startMonitorServer(port=9000):
+    logging.info("Starting monitor server in port {}".format(port))
     WebSocketServer(
-        ('0.0.0.0', 8000),
+        ('0.0.0.0', port),
 
         Resource({
             '^/monitor_socket': MonitorSocket,
