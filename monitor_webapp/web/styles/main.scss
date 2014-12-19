@@ -18,24 +18,28 @@
         }
 
         div {
-            border: 1px solid black;
+            border-bottom: 1px solid black;
             padding: 5px;
         }
 
         #proccpu {
             table {
-                tbody tr:nth-child(odd) {
-                    background: #eee;
-                }
+                border-collapse: collapse;
 
                 thead tr td {
                     font-weight: bold;
                 }
 
                 td {
+                    border: 1px solid #999;
                     font-size: small;
                 }
             }
+        }
+
+        .disk {
+            border-top: none;
+            border-bottom: none;
         }
 
         .disk span {
@@ -49,4 +53,9 @@
 }
 
 .critical {
+    background: #e00;
+}
+
+.timeout {
+    background: #eee;
 }

@@ -1,13 +1,18 @@
 import subprocess
 import string
 import logging
-import gevent
+import threading
+import time
 from server import broadcast
 
 def _shellquote(s):
     ''' Quotes a string so it can be passed as a shell parameter '''
     # This is highly unsafe and only works for simple strings!
     return "'" + s.replace("'", "'\\''") + "'"
+
+class RemoteCommandException(Exception):
+    def __init__(self, retcode, output):
+        super(RemoteCommandException, self).__init__(output)
 
 class Server(object):
     def __init__(self, name, host, description, port=22, username=''):
@@ -21,17 +26,21 @@ class Server(object):
         pass
 
     def executeCommand(self, remoteCommand):
-        localCommand = 'ssh -oBatchMode=yes '
-        localCommand += '-p %i ' % self.port
-        if self.username:
-            localCommand += self.username + '@'
-        localCommand += self.host + ' '
-        localCommand += _shellquote(remoteCommand)
+        command = ['ssh']
+        command += ['-oBatchMode=yes']
+        command += ['-p{}'.format(self.port)]
+
+        hostspec = self.host if not self.username else '{}@{}'.format(self.username, self.host)
+        command += [hostspec]
+        command += [remoteCommand]
 
         # Executes the command and splits the output by lines
-        output = subprocess.check_output(localCommand, shell=True).strip()
-        lines = string.split(output, '\n')
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+        if process.returncode != 0:
+            raise RemoteCommandException(process.returncode, stderr)
 
+        lines = stdout.strip().split('\n')
         return lines
 
 # Helper class, list that only stores the last n elements. Maybe "circular list"
@@ -46,19 +55,26 @@ class CircularList(object):
         if len(self.values) > self.capacity:
             self.values = self.values[-self.capacity:]
 
-class BaseMonitor(object):
+class BaseMonitor(threading.Thread):
     def __init__(self, server, monitorName, interval=2, numReads=10):
+        super(BaseMonitor, self).__init__()
+
         self.server = server
         self.monitorName = monitorName
         self.lastValues = CircularList(numReads)
         self.interval = interval
 
-    def monitorLoop(self):
+    def run(self):
         while True:
             try:
-                gevent.sleep(self.interval)
+                time.sleep(self.interval)
 
+                '''logging.debug("Generating values for '{}.{}'".
+                        format(self.server.name, self.monitorName))'''
                 values = self.generateValues()
+
+                '''logging.debug("Obtained values for '{}.{}'".
+                        format(self.server.name, self.monitorName))'''
                 self.lastValues.push(values)
 
                 messageName = 'monitor-'+self.monitorName
@@ -70,7 +86,7 @@ class BaseMonitor(object):
                 broadcast(messageName, message)
 
                 self.postProcess()
-            except subprocess.CalledProcessError as e:
+            except RemoteCommandException as e:
                 logging.error('Unable to execute command: {}'.format(e))
 
 

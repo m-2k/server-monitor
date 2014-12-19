@@ -16,7 +16,7 @@ def startMonitoringThreads(server):
     monitorClasses = [memory.MemoryMonitor, disk.DiskMonitor, processes.ProcCPUMonitor]
     for monitorClass in monitorClasses:
         monitor = monitorClass(server)
-        gevent.spawn(monitorClass.monitorLoop, monitor)
+        monitor.start()
 
 
 if __name__ == '__main__':
