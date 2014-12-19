@@ -2,24 +2,44 @@
  * Visual Style Guide styles
  * Remove if you prefer to use a CSS library, like Bootstrap
  */
+ 
+body > .container {
+    padding: 60px 15px 0;
+}
 
 #server-list {
     display: table;
-
+    
+    .server:first-child {
+        border-left: 1px solid black;
+    }
+    
     .server {
-        display: table-row;
+        /*display: table-row;*/
+        display: table-cell;
+        border-right: 1px solid black;
+        border-top: 1px solid black;
+        border-bottom: 1px solid black;
 
         #name {
             font-weight: bold;
+            text-align: center;
+            font-size: 14pt;
         }
 
         #name, #memory, #disks, #proccpu {
-            display: table-cell;
+            /*display: table-cell;*/
         }
 
         div {
             border-bottom: 1px solid black;
             padding: 5px;
+        }
+        
+        #memory {
+            progress {
+                width: 100%;
+            }
         }
 
         #proccpu {
@@ -28,11 +48,14 @@
 
                 thead tr td {
                     font-weight: bold;
+                    text-align: center;
+                    background: #D9EDF7;
                 }
-
+                
                 td {
                     border: 1px solid #999;
                     font-size: small;
+                    padding: 2px;
                 }
             }
         }
@@ -40,6 +63,10 @@
         .disk {
             border-top: none;
             border-bottom: none;
+            
+            progress {
+                width: 110px;
+            }
         }
 
         .disk span {
@@ -48,14 +75,6 @@
     }
 }
 
-.warning {
-    background: #ee0;
-}
-
-.critical {
-    background: #e00;
-}
-
 .timeout {
-    background: #eee;
+    background: #F5F5F5;
 }

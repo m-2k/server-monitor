@@ -3,8 +3,13 @@ import json
 from flask import Flask, render_template, app
 from geventwebsocket import WebSocketServer, WebSocketApplication, Resource, WebSocketError
 import logging
+import os
 
-flask_app = Flask(__name__)
+flask_app = Flask(__name__, 
+    static_url_path='', 
+    static_folder=os.path.join(os.getcwd(), 'monitor_webapp/build/web')
+)
+
 flask_app.debug = True
 
 ALL_CLIENTS = {}

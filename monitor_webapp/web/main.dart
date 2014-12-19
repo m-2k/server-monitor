@@ -5,15 +5,14 @@ import 'dart:async';
 /*****************************************************************************/
 void assignStatusClass(Element element, num currentValue, num maxValue, [num warningThresholdPC = 50, num criticalThresholdPC = 80])
 {
-
     num percent = currentValue*100.0/maxValue;
-    element.classes.remove("warning");
-    element.classes.remove("critical");
+    element.classes.remove("bg-warning");
+    element.classes.remove("bg-danger");
 
     if (percent >= warningThresholdPC && percent < criticalThresholdPC) {
-        element.classes.add("warning");
+        element.classes.add("bg-warning");
     } else if (percent >= criticalThresholdPC) {
-        element.classes.add("critical");
+        element.classes.add("bg-danger");
     }
 }
 
@@ -175,6 +174,7 @@ class ServerHandler
 
         serverDiv.append(new DivElement()
             ..text = this.name
+            ..classes.add("bg-primary")
             ..id = "name"
         );
 
@@ -219,23 +219,26 @@ class ServerHandler
 /*****************************************************************************/
 void setStatus(String message)
 {
-    document.querySelector('#status-message').text = message;
+    Element statusElement = document.querySelector('#status-message');
+    if (statusElement != null) {
+        statusElement.text = message;
+    }
+    print(message);
 }
 
 /*****************************************************************************/
 Map<String, ServerHandler> serverHandlers = new Map();
+WebSocket webSocket;
 
-void main() {
-    var serverList = document.querySelector("#server-list");
-
-    setStatus("Connecting to monitor socket...");
-    var ws = new WebSocket('ws://localhost:9000/monitor_socket')
-            ..onOpen.listen((Event e) => setStatus("Connected to socket"))
-            ..onClose.listen((CloseEvent e) => setStatus("Socket closed"))
-            ..onError.listen((Event e) => setStatus("Socket error: ${e.toString()}"))
-    ;
-
-    ws.onMessage.listen((MessageEvent e) {
+void connectSocket()
+{
+    bool hasError = false;
+    
+    setStatus("Connecting to socket...");
+    webSocket = new WebSocket('ws://localhost:9000/monitor_socket')
+        ..onOpen.listen((Event e) => setStatus("Connected to socket"));
+    
+    webSocket.onMessage.listen((MessageEvent e) {
         Map message = JSON.decode(e.data);
         String server = message['contents']['server'];
 
@@ -245,4 +248,27 @@ void main() {
 
         serverHandlers[server].update(message);
     });
+    
+    const Duration reconnectTimeout = const Duration(seconds: 10);
+    
+    webSocket.onClose.listen((CloseEvent e) {
+        setStatus("Socket closed. Retrying in 10 seconds.");
+        if (!hasError) {
+            new Timer(reconnectTimeout, connectSocket);
+        }
+        hasError = true;
+    });
+    
+    webSocket.onError.listen((Event e) {
+        setStatus("Socket error: ${e.toString()}. Retrying in 10 seconds.");
+        if (!hasError) {
+            new Timer(reconnectTimeout, connectSocket);
+        }
+        hasError = true;
+    });
+}
+
+void main()
+{
+    connectSocket();
 }

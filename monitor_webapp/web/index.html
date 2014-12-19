@@ -8,28 +8,39 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>monitor_webapp</title>
+  <title>Server status</title>
 
-  <!-- TODO: Swap the two stylesheet references in order to use Sass (and
-       uncomment the sass transformer in the pubspec.yaml file. -->
-  <!--link rel="stylesheet" href="styles/main_gen.css"-->
   <link rel="stylesheet" href="styles/main.css">
+  
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
 </head>
 
 <body>
 
-  <!-- example content. remove if you use your own styles and widgets -->
-
-  <header class="app-bar promote-layer">
-    <div class="app-bar-container">
-      <h1 class="logo">Server status</h1>
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
+            <div class="navbar-header navbar-brand">
+                <strong>Grandata server status</strong>
+            </div>
+            <div class="navbar-right navbar-brand"><small id="status-message"></small></div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="row">
+            <div class="main">
+                <!--div id="status-message"></div-->
+                <div id="server-list"></div>
+            </div>
+        </div>
     </div>
-    <div id="status-message"></div>
-  </header>
 
   <main>
     <div id="server-list"></div>
-  </main>
+  </main-->
 
   <script type="application/dart" src="main.dart"></script>
   <script data-pub-inline src="packages/browser/dart.js"></script>

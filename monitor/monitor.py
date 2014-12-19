@@ -86,6 +86,8 @@ class BaseMonitor(threading.Thread):
                 broadcast(messageName, message)
 
                 self.postProcess()
+            except ValueError as e:
+                logging.error('Found an error processing the command: {}'.format(e))
             except RemoteCommandException as e:
                 logging.error('Unable to execute command: {}'.format(e))
 
